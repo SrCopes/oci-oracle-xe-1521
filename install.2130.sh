@@ -87,7 +87,7 @@ rpm -iv --nodeps /install/oracle-database-xe-21c-1.0-1.ol8.x86_64.rpm
 usermod -d ${ORACLE_BASE} oracle
 
 # Add listener port and skip validations to conf file
-sed -i "s/LISTENER_PORT=/LISTENER_PORT=1521/g" /etc/sysconfig/oracle-xe-21c.conf
+sed -i "s/LISTENER_PORT=/LISTENER_PORT=1522/g" /etc/sysconfig/oracle-xe-21c.conf
 sed -i "s/SKIP_VALIDATIONS=false/SKIP_VALIDATIONS=true/g" /etc/sysconfig/oracle-xe-21c.conf
 
 # Disable netca to avoid "No IP address found" issue
@@ -121,7 +121,7 @@ echo \
   (DESCRIPTION_LIST =
     (DESCRIPTION =
       (ADDRESS = (PROTOCOL = IPC)(KEY = EXTPROC_FOR_${ORACLE_SID}))
-      (ADDRESS = (PROTOCOL = TCP)(HOST = 0.0.0.0)(PORT = 1521))
+      (ADDRESS = (PROTOCOL = TCP)(HOST = 0.0.0.0)(PORT = 1522))
     )
   )
 
@@ -131,7 +131,7 @@ DEFAULT_SERVICE_LISTENER = ${ORACLE_SID}" > "${ORACLE_BASE_HOME}"/network/admin/
 echo \
 "${ORACLE_SID} =
   (DESCRIPTION =
-    (ADDRESS = (PROTOCOL = TCP)(HOST = 0.0.0.0)(PORT = 1521))
+    (ADDRESS = (PROTOCOL = TCP)(HOST = 0.0.0.0)(PORT = 1522))
     (CONNECT_DATA =
       (SERVER = DEDICATED)
       (SERVICE_NAME = ${ORACLE_SID})
@@ -140,7 +140,7 @@ echo \
 
 ${ORACLE_SID}PDB1 =
   (DESCRIPTION =
-    (ADDRESS = (PROTOCOL = TCP)(HOST = 0.0.0.0)(PORT = 1521))
+    (ADDRESS = (PROTOCOL = TCP)(HOST = 0.0.0.0)(PORT = 1522))
     (CONNECT_DATA =
       (SERVER = DEDICATED)
       (SERVICE_NAME = ${ORACLE_SID}PDB1)
@@ -149,7 +149,7 @@ ${ORACLE_SID}PDB1 =
 
 FREE =
   (DESCRIPTION =
-    (ADDRESS = (PROTOCOL = TCP)(HOST = 0.0.0.0)(PORT = 1521))
+    (ADDRESS = (PROTOCOL = TCP)(HOST = 0.0.0.0)(PORT = 1522))
     (CONNECT_DATA =
       (SERVER = DEDICATED)
       (SERVICE_NAME = FREE)
@@ -158,7 +158,7 @@ FREE =
 
 FREEPDB1 =
   (DESCRIPTION =
-    (ADDRESS = (PROTOCOL = TCP)(HOST = 0.0.0.0)(PORT = 1521))
+    (ADDRESS = (PROTOCOL = TCP)(HOST = 0.0.0.0)(PORT = 1522))
     (CONNECT_DATA =
       (SERVER = DEDICATED)
       (SERVICE_NAME = FREEPDB1)
@@ -241,7 +241,7 @@ su -p oracle -c "sqlplus -s / as sysdba" << EOF
    -- Disable common_user_prefix (needed for OS authenticated user)
    ALTER SYSTEM SET COMMON_USER_PREFIX='' SCOPE=SPFILE;
 
-   -- Remove local_listener entry (using default 1521)
+   -- Remove local_listener entry (using default 1522)
    ALTER SYSTEM SET LOCAL_LISTENER='';
    
    -- Explicitly set CPU_COUNT=2 to avoid memory miscalculation (#64)

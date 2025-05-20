@@ -122,3 +122,5 @@ WORKDIR ${ORACLE_BASE}
 HEALTHCHECK CMD "${ORACLE_BASE}"/healthcheck.sh >/dev/null || exit 1
 
 ENTRYPOINT ["container-entrypoint.sh"]
+
+EXPOSE 1522
