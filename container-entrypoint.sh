@@ -26,6 +26,10 @@ set -Eeuo pipefail
 
 NOWAIT="${1:-}"
 
+chmod u+x "${ORACLE_BASE}"/*.sh \
+          "${ORACLE_BASE}"/resetPassword \
+          "${ORACLE_BASE}"/createAppUser
+
 # Stop container when SIGINT or SIGTERM is received
 ########### stop database helper function ############
 function stop_database() {
