@@ -366,13 +366,22 @@ fi;
 
 # Startup listener and database
 echo "CONTAINER: starting up Oracle Database..."
-lsnrctl start && \
+lsnrctl start
+sleep 5
 sqlplus -s / as sysdba << EOF
    -- Exit on any errors
    WHENEVER SQLERROR EXIT SQL.SQLCODE
-
    startup;
+   -- Set LOCAL_LISTENER to correct port for dynamic registration
+   ALTER SYSTEM SET LOCAL_LISTENER='(ADDRESS=(PROTOCOL=TCP)(HOST=localhost)(PORT=1522))' SCOPE=BOTH;
    exit;
+EOF
+# Force service registration to ensure PDBs are visible to the listener
+sqlplus -s / as sysdba <<EOF
+   ALTER SYSTEM REGISTER;
+   ALTER SESSION SET CONTAINER = XEPDB1;
+   ALTER SYSTEM REGISTER;
+   EXIT;
 EOF
 echo ""
 
@@ -426,7 +435,44 @@ if healthcheck.sh "${ORACLE_SID}"; then
       fi;
     fi;
 
+    # Make sure XEPDB1 is open and registered
+sqlplus -s / as sysdba <<EOF
+DECLARE
+  v_open_mode VARCHAR2(20);
+BEGIN
+  SELECT open_mode INTO v_open_mode FROM v\$pdbs WHERE name = 'XEPDB1';
+  IF v_open_mode != 'READ WRITE' THEN
+    EXECUTE IMMEDIATE 'ALTER PLUGGABLE DATABASE XEPDB1 OPEN';
+  END IF;
+END;
+/
+ALTER PLUGGABLE DATABASE XEPDB1 SAVE STATE;
+ALTER SYSTEM REGISTER;
+EXIT;
+EOF
+
+lsnrctl status
+
     # Running custom database initialization scripts
+    # Wait for XEPDB1 service registration before running custom scripts
+    timeout=$((10 * 60))  # 10 minutes max
+    interval=5            # check every 5 seconds
+    elapsed=0
+
+    while true; do
+      echo "Waiting for XEPDB1 service registration... (elapsed: ${elapsed}s)"
+      if echo "exit" | sqlplus -s system/"${ORACLE_PASSWORD}"@localhost:${ORACLE_PORT:-1522}/XEPDB1 | grep -q "Connected"; then
+        echo "XEPDB1 is ready!"
+        break
+      fi
+      sleep $interval
+      elapsed=$((elapsed + interval))
+      if [ $elapsed -ge $timeout ]; then
+        echo "ERROR: XEPDB1 service did not become available in $timeout seconds."
+        exit 1
+      fi
+    done
+
     run_custom_scripts /container-entrypoint-initdb.d
     # For backwards compatibility
     run_custom_scripts /docker-entrypoint-initdb.d
